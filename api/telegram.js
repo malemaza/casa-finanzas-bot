@@ -123,6 +123,37 @@ async function handleMessage(msg) {
     return;
   }
 
+  // registrar ingreso
+  // Formato: ingreso monto [USD] descripcion [Nombre]
+  if (low.startsWith('ingreso ')) {
+    const parts = text.split(/\s+/);
+    const amt = parseFloat(parts[1]);
+    if (isNaN(amt) || amt <= 0) {
+      await sendTelegramMessage(chatId, '❌ Formato: <code>ingreso 31250 sueldo</code> o <code>ingreso 2000 USD freelance</code>');
+      return;
+    }
+    let moneda = 'MXN', descStart = 2;
+    if (parts[2] && parts[2].toUpperCase() === 'USD') { moneda = 'USD'; descStart = 3; }
+    const desc = parts.slice(descStart).join(' ') || 'sin descripción';
+    const mxnDisplay = moneda === 'USD' ? ` (≈ ${fmtMXN(amt * tc)} MXN)` : '';
+    const montoDisplay = moneda === 'MXN' ? fmtMXN(amt) : '$' + amt.toFixed(2) + ' USD';
+    await getDB().collection('ingresos').add({
+      quien: quien.toLowerCase(),
+      tipo: 'otro',
+      desc,
+      fecha: today(),
+      monto: amt,
+      moneda,
+      activo: true,
+    });
+    await sendTelegramMessage(chatId,
+      `💰 <b>Ingreso registrado</b>: ${montoDisplay}${mxnDisplay}
+"${desc}"
+<i>Por ${quien}</i>`
+    );
+    return;
+  }
+
   // registrar gasto
   const parts = text.split(/\s+/);
   const cats = await getCats();
