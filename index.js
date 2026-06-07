@@ -9,8 +9,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // ── Firebase Admin Init ──
-const fbRaw = process.env.FIREBASE_SERVICE_ACCOUNT || '';
-const firebaseConfig = fbRaw.startsWith('{') ? JSON.parse(fbRaw) : JSON.parse(Buffer.from(fbRaw, 'base64').toString('utf8'));
+const firebaseConfig = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 initializeApp({ credential: cert(firebaseConfig) });
 const db = getFirestore();
 
