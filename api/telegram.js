@@ -77,7 +77,11 @@ async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const text = (msg.text || '').trim();
   const from = msg.from;
-  const quien = from.first_name || from.username || 'desconocido';
+  const quienRaw = from.first_name || from.username || 'desconocido';
+  const quienName = quienRaw.charAt(0).toUpperCase() + quienRaw.slice(1).toLowerCase();
+  const memberMap = JSON.parse(process.env.TELEGRAM_MEMBERS || '{}');
+  const quien = memberMap[quienName] || quienName;
+  const quienDisplay = quienName;
 
   if (!text || text.startsWith('/')) {
     if (text === '/start' || text === '/ayuda') {
@@ -138,7 +142,7 @@ async function handleMessage(msg) {
     const mxnDisplay = moneda === 'USD' ? ` (≈ ${fmtMXN(amt * tc)} MXN)` : '';
     const montoDisplay = moneda === 'MXN' ? fmtMXN(amt) : '$' + amt.toFixed(2) + ' USD';
     await getDB().collection('ingresos').add({
-      quien: quien.toLowerCase(),
+      quien: quien,
       tipo: 'otro',
       desc,
       fecha: today(),
@@ -190,7 +194,7 @@ async function handleMessage(msg) {
   let quienFinal = quien;
   if (lastWord === 'comun' || lastWord === 'compartido' || lastWord === 'comunes') {
     descParts = descParts.slice(0, -1); // sacar la última palabra
-    quienFinal = 'Comunes';
+    quienFinal = memberMap['Comunes'] || 'Comunes';
   }
   const desc = descParts.join(' ') || 'sin descripción';
 
@@ -200,7 +204,7 @@ async function handleMessage(msg) {
 
   const mxnDisplay = moneda === 'USD' ? ` (≈ ${fmtMXN(amt * tc)} MXN)` : '';
   const montoDisplay = moneda === 'MXN' ? fmtMXN(amt) : '$' + amt.toFixed(2) + ' USD';
-  const quienLabel = quienFinal === 'Comunes' ? '👫 Gasto común' : `Por ${quien}`;
+  const quienLabel = (quienFinal === (memberMap['Comunes'] || 'Comunes')) ? '👫 Gasto común' : `Por ${quienDisplay}`;
   await sendTelegramMessage(chatId,
     `✅ <b>${cat.emoji || ''} ${cat.name}</b>: ${montoDisplay}${mxnDisplay}\n"${desc}"\n<i>${quienLabel}</i>`
   );
